@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:food_manager/LoginPage.dart';
+import 'package:food_manager/RegisterPage.dart';
+import 'package:food_manager/SplashPage.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 
@@ -12,17 +15,20 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(title: 'Food Manager'),
-    );
+        home: SplashPage(),
+        routes: <String, WidgetBuilder>{
+          '/home': (BuildContext context) => MyHomePage(title: 'Home'),
+          '/login': (BuildContext context) => LoginPage(),
+          '/register': (BuildContext context) => RegisterPage(),
+        });
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
-
-
+  MyHomePage({Key key, this.title, this.uid}) : super(key: key);
 
   final String title;
+  final String uid;
 
   @override
   _MyHomePageState createState() => _MyHomePageState();
