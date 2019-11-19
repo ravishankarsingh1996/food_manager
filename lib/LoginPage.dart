@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:food_manager/AppUtils.dart';
 import 'package:food_manager/main.dart';
 
 class LoginPage extends StatefulWidget {
@@ -51,60 +52,70 @@ class _LoginPageState extends State<LoginPage> {
             padding: const EdgeInsets.all(20.0),
             child: SingleChildScrollView(
                 child: Form(
-                  key: _loginFormKey,
-                  child: Column(
-                    children: <Widget>[
-                      TextFormField(
-                        decoration: InputDecoration(
-                            labelText: 'Email*', hintText: "john.doe@gmail.com"),
-                        controller: emailInputController,
-                        keyboardType: TextInputType.emailAddress,
-                        validator: emailValidator,
-                      ),
-                      TextFormField(
-                        decoration: InputDecoration(
-                            labelText: 'Password*', hintText: "********"),
-                        controller: pwdInputController,
-                        obscureText: true,
-                        validator: pwdValidator,
-                      ),
-                      RaisedButton(
-                        child: Text("Login"),
-                        color: Theme.of(context).primaryColor,
-                        textColor: Colors.white,
-                        onPressed: () {
-                          if (_loginFormKey.currentState.validate()) {
-                            FirebaseAuth.instance
-                                .signInWithEmailAndPassword(
+              key: _loginFormKey,
+              child: Column(
+                children: <Widget>[
+                  TextFormField(
+                    decoration: InputDecoration(
+                        labelText: 'Email*', hintText: "john.doe@gmail.com"),
+                    controller: emailInputController,
+                    keyboardType: TextInputType.emailAddress,
+                    validator: emailValidator,
+                  ),
+                  TextFormField(
+                    decoration: InputDecoration(
+                        labelText: 'Password*', hintText: "********"),
+                    controller: pwdInputController,
+                    obscureText: true,
+                    validator: pwdValidator,
+                  ),
+                  RaisedButton(
+                    child: Text("Login"),
+                    color: Theme.of(context).primaryColor,
+                    textColor: Colors.white,
+                    onPressed: () {
+                      if (_loginFormKey.currentState.validate()) {
+                        FirebaseAuth.instance
+                            .signInWithEmailAndPassword(
                                 email: emailInputController.text,
                                 password: pwdInputController.text)
-                                .then((currentUser) => Firestore.instance
-                                .collection("users")
-                                .document(currentUser.user.uid)
-                                .get()
-                                .then((DocumentSnapshot result) =>
-                                Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => MyHomePage(
-                                          title: result["fname"] +
-                                              "'s Tasks",
-                                          uid: currentUser.user.uid,
-                                        ))))
-                                .catchError((err) => print(err)))
-                                .catchError((err) => print(err));
-                          }
-                        },
-                      ),
-                      Text("Don't have an account yet?"),
-                      FlatButton(
-                        child: Text("Register here!"),
-                        onPressed: () {
-                          Navigator.pushNamed(context, "/register");
-                        },
-                      )
-                    ],
+                            .then((currentUser) {
+                          Firestore.instance
+                              .collection("users")
+                              .document(currentUser.user.uid)
+                              .get()
+                              .then((DocumentSnapshot result) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => MyHomePage(
+                                  title: 'Welcome back ' + result.data["fname"],
+                                  uid: currentUser.user.uid,
+                                ),
+                              ),
+                            );
+                          }).catchError((err) {
+                            print(err);
+                            AppUtils.showToast(
+                                err.message, Colors.red, Colors.white);
+                          });
+                        }).catchError((err) {
+                          print(err);
+                          AppUtils.showToast(
+                              err.message, Colors.red, Colors.white);
+                        });
+                      }
+                    },
                   ),
-                ))));
+                  Text("Don't have an account yet?"),
+                  FlatButton(
+                    child: Text("Register here!"),
+                    onPressed: () {
+                      Navigator.pushNamed(context, "/register");
+                    },
+                  )
+                ],
+              ),
+            ))));
   }
 }
