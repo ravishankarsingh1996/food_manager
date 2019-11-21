@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_manager/AppUtils.dart';
 import 'package:food_manager/main.dart';
+import 'package:progress_dialog/progress_dialog.dart';
 
 class LoginPage extends StatefulWidget {
   LoginPage({Key key}) : super(key: key);
@@ -15,12 +16,24 @@ class _LoginPageState extends State<LoginPage> {
   final GlobalKey<FormState> _loginFormKey = GlobalKey<FormState>();
   TextEditingController emailInputController;
   TextEditingController pwdInputController;
+  ProgressDialog pr;
 
   @override
   initState() {
+    pr = new ProgressDialog(context,type: ProgressDialogType.Normal, isDismissible:false, showLogs: false);
+    pr.style(
+        message: 'Please wait...',);
     emailInputController = new TextEditingController();
     pwdInputController = new TextEditingController();
     super.initState();
+  }
+
+  showProgressDialog(bool isShow){
+    if(isShow){
+      pr.show();
+    }else{
+      pr.hide();
+    }
   }
 
   String emailValidator(String value) {
@@ -75,31 +88,36 @@ class _LoginPageState extends State<LoginPage> {
                     textColor: Colors.white,
                     onPressed: () {
                       if (_loginFormKey.currentState.validate()) {
+                        showProgressDialog(true);
                         FirebaseAuth.instance
                             .signInWithEmailAndPassword(
                                 email: emailInputController.text,
                                 password: pwdInputController.text)
                             .then((currentUser) {
+                              showProgressDialog(true);
                           Firestore.instance
                               .collection("users")
                               .document(currentUser.user.uid)
                               .get()
                               .then((DocumentSnapshot result) {
+                                showProgressDialog(false);
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => MyHomePage(
-                                  title: 'Welcome back ' + result.data["fname"],
+                                  title: ('Welcome Back ' + result.data["fname"]).toUpperCase(),
                                   uid: currentUser.user.uid,
                                 ),
                               ),
                             );
                           }).catchError((err) {
+                            showProgressDialog(false);
                             print(err);
                             AppUtils.showToast(
                                 err.message, Colors.red, Colors.white);
                           });
                         }).catchError((err) {
+                          showProgressDialog(false);
                           print(err);
                           AppUtils.showToast(
                               err.message, Colors.red, Colors.white);

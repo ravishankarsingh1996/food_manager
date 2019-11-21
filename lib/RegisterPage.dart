@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_manager/AppUtils.dart';
 import 'package:food_manager/main.dart';
+import 'package:progress_dialog/progress_dialog.dart';
 
 import 'AppConstants.dart';
 
@@ -21,9 +22,13 @@ class _RegisterPageState extends State<RegisterPage> {
   TextEditingController employeeIdInputController;
   TextEditingController pwdInputController;
   TextEditingController confirmPwdInputController;
+  ProgressDialog pr;
 
   @override
   initState() {
+    pr = new ProgressDialog(context,type: ProgressDialogType.Normal, isDismissible:false, showLogs: false);
+    pr.style(
+      message: 'Please wait...',);
     firstNameInputController = new TextEditingController();
     lastNameInputController = new TextEditingController();
     emailInputController = new TextEditingController();
@@ -32,6 +37,15 @@ class _RegisterPageState extends State<RegisterPage> {
     confirmPwdInputController = new TextEditingController();
     super.initState();
   }
+
+  showProgressDialog(bool isShow){
+    if(isShow){
+      pr.show();
+    }else{
+      pr.hide();
+    }
+  }
+
 
   String emailValidator(String value) {
     Pattern pattern =
@@ -142,14 +156,17 @@ class _RegisterPageState extends State<RegisterPage> {
     {
       if (_registerFormKey.currentState.validate()) {
         if (pwdInputController.text == confirmPwdInputController.text) {
+          showProgressDialog(true);
           FirebaseAuth.instance
               .createUserWithEmailAndPassword(
                   email: emailInputController.text,
                   password: pwdInputController.text)
               .then((currentUser) {
+            showProgressDialog(true);
             try {
               currentUser.user.sendEmailVerification();
             } catch (e) {
+              showProgressDialog(false);
               print("An error occured while trying to send email verification");
               AppUtils.showToast(
                   'An error occured while trying to send email verification',
@@ -168,12 +185,13 @@ class _RegisterPageState extends State<RegisterPage> {
               AppConstants.KEY_EMPLOYEE_ID: employeeIdInputController.text,
               AppConstants.KEY_IS_VENDOR: false,
             }).then((result) {
+              showProgressDialog(false);
               Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(
                       builder: (context) => MyHomePage(
                             title:
-                                'Welcome back ' + firstNameInputController.text,
+                            ('Welcome back ' + firstNameInputController.text).toUpperCase(),
                             uid: currentUser.user.uid,
                           )),
                   (_) => false);
@@ -184,10 +202,12 @@ class _RegisterPageState extends State<RegisterPage> {
               pwdInputController.clear();
               confirmPwdInputController.clear();
             }).catchError((err) {
+              showProgressDialog(false);
               print(err);
               AppUtils.showToast(err.message, Colors.red, Colors.white);
             });
           }).catchError((err) {
+            showProgressDialog(false);
             print(err);
             AppUtils.showToast(err.message, Colors.red, Colors.white);
           });

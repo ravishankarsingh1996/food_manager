@@ -1,13 +1,16 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:food_manager/LoginPage.dart';
 import 'package:food_manager/Record.dart';
 import 'package:food_manager/RegisterPage.dart';
 import 'package:food_manager/SplashPage.dart';
+import 'package:food_manager/booking_id_list_model.dart';
 import 'package:intl/intl.dart';
+import 'package:progress_dialog/progress_dialog.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import 'AppConstants.dart';
@@ -46,48 +49,31 @@ class _MyHomePageState extends State<MyHomePage> {
   String _scanBarcode = "";
   bool _isEmailVerified = false;
   bool _isVendor = false;
-  List userList = new List();
-
-  Future<void> scanBarcodeNormal() async {
-    String barcodeScanRes;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-
-    barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
-        "#42f5ef", "Cancel", true, ScanMode.QR);
-    print(barcodeScanRes);
-
-    setState(() {
-      Timestamp timestamp = Timestamp.now();
-      var date = new DateTime.fromMillisecondsSinceEpoch(
-          timestamp.millisecondsSinceEpoch);
-      var formatter = new DateFormat('yyyy-MM-dd');
-      String formatted = formatter.format(date);
-      print(formatted);
-      AppUtils.showToast(formatted, Colors.blue, Colors.white);
-      Firestore.instance
-          .collection(AppConstants.DB_KEY_BOOKING_DATA)
-          .document(formatted)
-          .setData({
-        AppConstants.KEY_USER_ID: formatted,
-//        AppConstants.KEY_FIRST_NAME: firstNameInputController.text,
-//        AppConstants.KEY_LAST_NAME: lastNameInputController.text,
-//        AppConstants.KEY_EMAIL: emailInputController.text,
-//        AppConstants.KEY_EMPLOYEE_ID: employeeIdInputController.text,
-//        AppConstants.KEY_IS_VENDOR: false,
-      }).then((result) {
-
-      });
-      _scanBarcode = barcodeScanRes;
-    });
-  }
+  List userList = List();
+  List<dynamic> bookingList = List();
+  ProgressDialog pr;
+  String userJson = '';
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    pr = new ProgressDialog(context,
+        type: ProgressDialogType.Normal, isDismissible: false, showLogs: false);
+    pr.style(
+      message: 'Please wait...',
+    );
     getCurrentUserData();
-    getTodaysBookingList();
+    getTodayBookingList();
     getUserData();
+  }
+
+  showProgressDialog(bool isShow) {
+    if (isShow) {
+      pr.show();
+    } else {
+      pr.hide();
+    }
   }
 
   @override
@@ -133,6 +119,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void getUserData() async {
+    showProgressDialog(true);
     QuerySnapshot querySnapshot = await Firestore.instance
         .collection(AppConstants.DB_KEY_USER)
         .getDocuments();
@@ -143,13 +130,59 @@ class _MyHomePageState extends State<MyHomePage> {
         .get();
     if (result != null) {
       setState(() {
+        showProgressDialog(false);
         _isVendor = result.data[AppConstants.KEY_IS_VENDOR];
         if (_isVendor) {
           userList = querySnapshot.documents;
-          Record record = Record.fromSnapshot(userList[0]);
-          AppUtils.showToast(record.email, Colors.blue, Colors.white);
+          for (int i = 0; i < userList.length; i++) {
+            Record data = Record.fromSnapshot(userList[i]);
+            if (data.uid.compareTo(widget.uid) == 0) {
+              data.qrData = data.uid + getCurrentDateFromServer();
+              userJson = data.toString();
+            }
+          }
+//          Record record = Record.fromSnapshot(userList[0]);
+//          AppUtils.showToast(record.email, Colors.blue, Colors.white);
 //          userList = usersRef.
         }
+      });
+    }
+  }
+
+  Future<void> scanBarcodeNormal() async {
+    String barcodeScanRes;
+    // Platform messages may fail, so we use a try/catch PlatformException.
+
+    barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
+        "#42f5ef", "Cancel", true, ScanMode.QR);
+    print(barcodeScanRes);
+    Map map = jsonDecode(barcodeScanRes);
+    Record record = Record.fromMap(map);
+    if (bookingList.contains(record.uid)) {
+      AppUtils.showToast(
+          'You already have your lunch.', Colors.red, Colors.white);
+    } else {
+      bookingList.add(barcodeScanRes);
+      setState(() {
+        Timestamp timestamp = Timestamp.now();
+        var date = new DateTime.fromMillisecondsSinceEpoch(
+            timestamp.millisecondsSinceEpoch);
+        var formatter = new DateFormat('yyyy-MM-dd');
+        String formatted = formatter.format(date);
+        print(formatted);
+//      AppUtils.showToast(formatted, Colors.blue, Colors.white);
+        Firestore.instance
+            .collection(AppConstants.DB_KEY_BOOKING_DATA)
+            .document(formatted)
+            .setData({
+          AppConstants.KEY_BOOKING_LIST: bookingList,
+//        AppConstants.KEY_FIRST_NAME: firstNameInputController.text,
+//        AppConstants.KEY_LAST_NAME: lastNameInputController.text,
+//        AppConstants.KEY_EMAIL: emailInputController.text,
+//        AppConstants.KEY_EMPLOYEE_ID: employeeIdInputController.text,
+//        AppConstants.KEY_IS_VENDOR: false,
+        }).then((result) {});
+        _scanBarcode = barcodeScanRes;
       });
     }
   }
@@ -158,7 +191,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return [
 //      Text(_scanBarcode),
       QrImage(
-          data: widget.uid,
+          data: userJson,
           // this the data part where we need to add employeeID with current date.
           version: QrVersions.auto,
           size: 400.0,
@@ -199,22 +232,27 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _checkVerificationStatus() async {
+    showProgressDialog(true);
     try {
       FirebaseUser user = await FirebaseAuth.instance.currentUser();
       UserUpdateInfo userUpdateInfo = new UserUpdateInfo();
       userUpdateInfo.displayName = user.displayName;
       user.updateProfile(userUpdateInfo).then((onValue) {
-        _isEmailVerified = user.isEmailVerified;
-      });
-      if (user.isEmailVerified) {
-        setState(() {
-          _isEmailVerified = true;
+        FirebaseAuth.instance.currentUser().then((user){
+          showProgressDialog(false);
+          _isEmailVerified = user.isEmailVerified;
+          if (user.isEmailVerified) {
+            setState(() {
+              _isEmailVerified = true;
+            });
+          } else {
+            AppUtils.showToast(
+                'You haven\'t verified your email yet!', Colors.red, Colors.white);
+          }
         });
-      } else {
-        AppUtils.showToast(
-            'You haven\'t verified your email yet!', Colors.red, Colors.white);
-      }
+      });
     } catch (e) {
+      showProgressDialog(false);
       print('An error occured while trying to check email is verified or not!');
       AppUtils.showToast(
           'An error occured while trying to check email is verified or not!',
@@ -225,15 +263,19 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _sendEmailVerificationMailAgain() async {
+    showProgressDialog(true);
     try {
       FirebaseUser user = await FirebaseAuth.instance.currentUser();
       user.sendEmailVerification().then((_) {
+        showProgressDialog(false);
         AppUtils.showToast('Email verification link send successfuly.',
             Colors.green, Colors.white);
       }).catchError((error) {
+        showProgressDialog(false);
         print(error.message);
       });
     } catch (e) {
+      showProgressDialog(false);
       print("An error occured while trying to send email verification");
       AppUtils.showToast(
           'An error occured while trying to send email verification',
@@ -244,20 +286,29 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void getCurrentUserData() async {
+    showProgressDialog(true);
     try {
       FirebaseUser user = await FirebaseAuth.instance.currentUser();
       setState(() {
+        showProgressDialog(false);
         _isEmailVerified = user.isEmailVerified;
       });
     } catch (e) {
+      showProgressDialog(false);
       print("An error occured while trying to get current user.");
     }
   }
 
   _getVendorList() {
+    List<Record> foodBookingUsers = List();
+    for (int i = 0; i < userList.length; i++) {
+      Record record = Record.fromSnapshot(userList[i]);
+      if (bookingList.contains(record.uid)) {
+        foodBookingUsers.add(record);
+      }
+    }
     return ListView.builder(
       itemBuilder: (context, int position) {
-        Record record = Record.fromSnapshot(userList[position]);
         return Padding(
           padding: const EdgeInsets.all(4.0),
           child: Column(
@@ -280,7 +331,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   Expanded(
                     child: Text(
-                      record.firstName,
+                      foodBookingUsers[position].firstName,
+//                      bookingList[position],
                       style: TextStyle(fontSize: 20),
                     ),
                   )
@@ -293,13 +345,41 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         );
       },
-      itemCount: userList.length,
+      itemCount: foodBookingUsers.length,
+//      itemCount: bookingList.length,
     );
   }
 
-  void getTodaysBookingList() async{
+  void getTodayBookingList() async {
+    showProgressDialog(true);
     QuerySnapshot querySnapshot = await Firestore.instance
         .collection(AppConstants.DB_KEY_BOOKING_DATA)
         .getDocuments();
+
+    Timestamp timestamp = Timestamp.now();
+    var date = new DateTime.fromMillisecondsSinceEpoch(
+        timestamp.millisecondsSinceEpoch);
+    var formatter = new DateFormat('yyyy-MM-dd');
+    String formatted = formatter.format(date);
+
+    var bookings = querySnapshot.documents;
+    for (int i = 0; i < bookings.length; i++) {
+      if (bookings[i].documentID.compareTo(formatted) == 0) {
+        BookingId bookingId = BookingId.fromSnapshot(bookings[i]);
+        bookingList.addAll(bookingId.id);
+      }
+    }
+    if (!mounted)
+      setState(() {
+        showProgressDialog(false);
+      });
+  }
+
+  String getCurrentDateFromServer() {
+    Timestamp timestamp = Timestamp.now();
+    var date = new DateTime.fromMillisecondsSinceEpoch(
+        timestamp.millisecondsSinceEpoch);
+    var formatter = new DateFormat('yyyy-MM-dd');
+    return formatter.format(date);
   }
 }

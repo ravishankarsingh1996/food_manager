@@ -30,7 +30,7 @@ class _SplashPageState extends State<SplashPage> {
                           context,
                           MaterialPageRoute(
                               builder: (context) => MyHomePage(
-                                    title: 'Welcome back '+result.data["fname"],
+                                    title: ('Welcome back '+result.data["fname"]).toUpperCase(),
                                     uid: currentUser.uid,
                                   )));
                     }
