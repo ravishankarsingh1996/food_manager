@@ -15,6 +15,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import 'AppConstants.dart';
 import 'AppUtils.dart';
+import 'myScrollBehavoiur.dart';
 
 void main() => runApp(MyApp());
 
@@ -23,6 +24,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
         title: 'Food Manager',
+        debugShowCheckedModeBanner: false,
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
@@ -55,6 +57,8 @@ class _MyHomePageState extends State<MyHomePage> {
   String userJson =
       '{"email": "", "uid": "test", "firstName": "", "lastName": "", "qrData": "", "reference": ""}';
 
+  Record userProfileData;
+
   @override
   void initState() {
     // TODO: implement initState
@@ -80,40 +84,28 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-        actions: <Widget>[
-          IconButton(
-            onPressed: () {
-              FirebaseAuth.instance.signOut();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => LoginPage(),
-                ),
-              );
-            },
-            icon: Icon(Icons.exit_to_app),
-          )
-        ],
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisSize: MainAxisSize.max,
+            children:
+              _isEmailVerified
+                  ? _isVendor ? _getVendorList() : _getVerifiedUserUI()
+                  : _getUnVerifiedUserUI(),
+
+          ),
+        ),
       ),
-      body: Center(
-        child: _isVendor
-            ? _getVendorList()
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisSize: MainAxisSize.max,
-                children: _isEmailVerified
-                    ? _getVerifiedUserUI()
-                    : _getUnVerifiedUserUI(),
-              ),
-      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: _isVendor
-          ? FloatingActionButton(
+          ? FloatingActionButton.extended(
+              elevation: 10,
               onPressed: scanBarcodeNormal,
               tooltip: 'Scan',
-              child: Icon(Icons.search),
+              icon: Icon(Icons.search),
+              label: Text('Scan'),
             )
           : Container(),
     );
@@ -135,10 +127,10 @@ class _MyHomePageState extends State<MyHomePage> {
         if (_isVendor) {
           userList = querySnapshot.documents;
         } else {
-          Record data = Record.fromSnapshot(result);
-          if (data.uid.compareTo(widget.uid) == 0) {
-            data.qrData = data.uid + getCurrentDateFromServer();
-            userJson = data.toString();
+           userProfileData = Record.fromSnapshot(result);
+          if (userProfileData.uid.compareTo(widget.uid) == 0) {
+            userProfileData.qrData = userProfileData.uid + getCurrentDateFromServer();
+            userJson = userProfileData.toString();
           }
         }
       });
@@ -174,7 +166,6 @@ class _MyHomePageState extends State<MyHomePage> {
     } else {
       bookingList.add(record.uid);
       setState(() {
-//      AppUtils.showToast(formatted, Colors.blue, Colors.white);
         Firestore.instance
             .collection(AppConstants.DB_KEY_BOOKING_DATA)
             .document(formatted)
@@ -188,64 +179,132 @@ class _MyHomePageState extends State<MyHomePage> {
 
   _getVerifiedUserUI() {
     return [
-//      Text(_scanBarcode),
-      QrImage(
-          data: userJson,
-          // this the data part where we need to add employeeID with current date.
-          version: QrVersions.auto,
-          size: 400.0,
-          gapless: false,
-//                  backgroundColor:  Color.fromARGB(255, 200, 100, 100),
-//                  foregroundColor: Color.fromARGB(255, 200, 25, 25),
-          errorStateBuilder: (cxt, err) {
-            return Container(
-              child: Center(
-                child: Column(
-                  children: <Widget>[
-                    Text(
-                      "Uh oh! Something went wrong...",
-                      textAlign: TextAlign.center,
-                    ),
-                    RaisedButton(
-                      onPressed: () {
-                        getUserData();
-                      },
-                      child: Text('Reload QR code'),
-                    )
-                  ],
+      Container(
+          margin: EdgeInsets.all(15),
+          child: Stack(
+            alignment: Alignment.center,
+            children: <Widget>[
+              Align(
+                alignment: Alignment.center,
+                child: Text(
+                  'Welcome Back',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
                 ),
               ),
-            );
-          },
-          embeddedImage: NetworkImage(
-              'http://3.bp.blogspot.com/-EE2J_9N7FdI/Xc-5jf-ssgI/AAAAAAAAXmI/zWxKqrHeKGkOTBZd6aAFeZ5vXCDo6E2cgCK4BGAYYCw/s400/logo_1.png'),
-          embeddedImageStyle: QrEmbeddedImageStyle(
-              size: Size.square(30), color: Color.fromARGB(100, 10, 10, 10))),
-
-      userJson.contains('test')
-          ? RaisedButton(
+              Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  onPressed: () {
+                    FirebaseAuth.instance.signOut();
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => LoginPage(),
+                      ),
+                    );
+                  },
+                  icon: Icon(Icons.exit_to_app),
+                ),
+              )
+            ],
+          )),
+      Container(
+        child: Row(
+          children: <Widget>[
+          //TODO show User profile Data UI
+          ],
+        ),
+      ),
+      Expanded(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.max,
+          children: <Widget>[
+            userJson.contains('test')
+                ? RaisedButton(
+              color: Colors.blue,
               onPressed: () {
                 getUserData();
               },
-              child: Text('Reload QR code'),
+              child: Text(
+                'Reload QR code',
+                style: TextStyle(color: Colors.white),
+              ),
             )
-          : Container(),
+                : Card(
+              elevation: 30,
+              margin: EdgeInsets.all(10),
+              child: QrImage(
+                  data: userJson,
+                  // this the data part where we need to add employeeID with current date.
+                  version: QrVersions.auto,
+                  size: 400.0,
+                  gapless: false,
+                  backgroundColor: Colors.blueAccent,
+                  foregroundColor: Colors.white,
+                  errorStateBuilder: (cxt, err) {
+                    return Container(
+                      child: Center(
+                        child: Column(
+                          children: <Widget>[
+                            Text(
+                              "Uh oh! Something went wrong...",
+                              textAlign: TextAlign.center,
+                            ),
+                            RaisedButton(
+                              onPressed: () {
+                                getUserData();
+                              },
+                              child: Text('Reload QR code'),
+                            )
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                  embeddedImage: NetworkImage(
+                      'http://3.bp.blogspot.com/-EE2J_9N7FdI/Xc-5jf-ssgI/AAAAAAAAXmI/zWxKqrHeKGkOTBZd6aAFeZ5vXCDo6E2cgCK4BGAYYCw/s400/logo_1.png'),
+                  embeddedImageStyle: QrEmbeddedImageStyle(
+                      size: Size.square(40),
+                      color: Color.fromARGB(100, 10, 10, 10))),
+            ),
+            SizedBox(
+              height: 20,
+            ),
+            Text(
+              'Show this QR Code to Food Vendor',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+            )
+          ],
+        ),
+      )
     ];
   }
 
   _getUnVerifiedUserUI() {
     return [
-      Text('Please verify your eamil in order to use this app.'),
-      RaisedButton(
-          child: Text("Send email again"),
-          color: Theme.of(context).primaryColor,
-          textColor: Colors.white,
-          onPressed: _sendEmailVerificationMailAgain),
-      RaisedButton(
-          child: Text("Already Verified"),
-          color: Theme.of(context).primaryColor,
-          textColor: Colors.white,
-          onPressed: _checkVerificationStatus)
+      SizedBox(
+        height: 150,
+      ),
+      Expanded(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.max,
+          children: <Widget>[
+            Text('Please verify your eamil in order to use this app.'),
+            RaisedButton(
+                child: Text("Send email again"),
+                color: Theme.of(context).primaryColor,
+                textColor: Colors.white,
+                onPressed: _sendEmailVerificationMailAgain),
+            RaisedButton(
+                child: Text("Already Verified"),
+                color: Theme.of(context).primaryColor,
+                textColor: Colors.white,
+                onPressed: _checkVerificationStatus)
+          ],
+        ),
+      )
     ];
   }
 
@@ -324,46 +383,195 @@ class _MyHomePageState extends State<MyHomePage> {
         foodBookingUsers.add(record);
       }
     }
-    return ListView.builder(
-      itemBuilder: (context, int position) {
-        return Padding(
-          padding: const EdgeInsets.all(4.0),
-          child: Column(
-            children: <Widget>[
-              Row(
-                mainAxisSize: MainAxisSize.max,
-                mainAxisAlignment: MainAxisAlignment.start,
+
+    return [
+        Container(
+            margin: EdgeInsets.all(15),
+            child: Stack(
+              alignment: Alignment.center,
+              children: <Widget>[
+                Align(
+                  alignment: Alignment.center,
+                  child: Text(
+                    'Today\'s Lunch Sheet',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton(
+                    onPressed: () {
+                      FirebaseAuth.instance.signOut();
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => LoginPage(),
+                        ),
+                      );
+                    },
+                    icon: Icon(Icons.exit_to_app),
+                  ),
+                )
+              ],
+            )),
+        Expanded(
+          child: foodBookingUsers.length > 0
+              ? getVendorListBuilder(foodBookingUsers)
+              : Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.max,
+                    children: <Widget>[
+                      Image.network(
+                        'https://cdn.pixabay.com/photo/2017/02/21/08/49/food-2085075_960_720.png',
+                        height: 100,
+                        width: 100,
+                      ),
+                      SizedBox(
+                        height: 20,
+                      ),
+                      Text('Today, No one took their lunch!'),
+                    ],
+                  ),
+                ),
+        ),
+        SizedBox(
+          height: 50,
+        )
+      ];
+  }
+
+  getVendorListBuilder(List<Record> foodBookingUsers) {
+    return ScrollConfiguration(
+      behavior: MyBehavior(),
+      child: ListView.builder(
+        itemBuilder: (context, int position) {
+          return Container(
+            decoration: BoxDecoration(boxShadow: [
+              BoxShadow(spreadRadius: 1, color: Colors.grey, blurRadius: 15)
+            ]),
+            margin: EdgeInsets.all(15.0),
+            child: ClipRRect(
+              borderRadius: BorderRadius.only(
+                bottomRight: Radius.circular(15),
+                topLeft: Radius.circular(15),
+              ),
+              child: Stack(
                 children: <Widget>[
                   Container(
+                    height: 100,
+                    width: double.infinity,
                     decoration: BoxDecoration(
-                        shape: BoxShape.circle, color: Colors.red),
-                    child: Text(
-                      (position + 1).toString(),
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    padding: EdgeInsets.all(15.0),
+                        gradient: LinearGradient(
+                            colors: [Colors.lightBlue, Colors.blueAccent])),
                   ),
-                  SizedBox(
-                    width: 30,
-                  ),
-                  Expanded(
-                    child: Text(
-                      foodBookingUsers[position].firstName,
-//                      bookingList[position],
-                      style: TextStyle(fontSize: 20),
+                  Container(
+                    height: 100,
+                    width: double.infinity,
+                    child: Column(
+                      children: <Widget>[
+                        Expanded(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.max,
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: <Widget>[
+                              Container(
+                                margin: EdgeInsets.symmetric(
+                                    horizontal: 10.0, vertical: 2.0),
+                                child: Column(
+                                  children: <Widget>[
+                                    Card(
+                                      color: Colors.white,
+                                      elevation: 10,
+                                      shape: CircleBorder(),
+                                      child: Container(
+                                        height: 45,
+                                        width: 45,
+                                        padding: EdgeInsets.all(5),
+                                        child: Center(
+                                          child: Text(
+                                            (position + 1).toString(),
+                                            style: TextStyle(
+                                                color: Colors.orange,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: 3,
+                                    ),
+                                    Text(
+                                      foodBookingUsers[position].employeeId,
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600),
+                                    )
+                                  ],
+                                  mainAxisSize: MainAxisSize.max,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                ),
+                              ),
+                              SizedBox(
+                                width: 30,
+                              ),
+                              Expanded(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    Text(
+                                      foodBookingUsers[position].firstName +
+                                          ' ' +
+                                          foodBookingUsers[position].lastName,
+                                      style: TextStyle(
+                                          fontSize: 30, color: Colors.white),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                      textAlign: TextAlign.start,
+                                    ),
+                                    Text(
+                                      foodBookingUsers[position].email,
+                                      style: TextStyle(
+                                          fontSize: 12, color: Colors.white70),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                margin: EdgeInsets.all(10),
+                                child: Card(
+                                    color: Colors.white,
+                                    elevation: 10,
+                                    shape: StadiumBorder(),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Icon(
+                                        Icons.cloud_done,
+                                        color: Colors.green,
+                                      ),
+                                    )),
+                              )
+                            ],
+                          ),
+                        ),
+//                      Divider(
+//                        color: Colors.grey,
+//                      ),
+                      ],
                     ),
-                  )
+                  ),
                 ],
               ),
-              Divider(
-                color: Colors.grey,
-              ),
-            ],
-          ),
-        );
-      },
-      itemCount: foodBookingUsers.length,
+            ),
+          );
+        },
+        itemCount: foodBookingUsers.length,
 //      itemCount: bookingList.length,
+      ),
     );
   }
 

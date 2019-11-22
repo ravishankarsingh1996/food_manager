@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:wave/config.dart';
 import 'main.dart';
+import 'package:wave/wave.dart';
 
 class SplashPage extends StatefulWidget {
   SplashPage({Key key}) : super(key: key);
@@ -44,10 +46,43 @@ class _SplashPageState extends State<SplashPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Container(
-          child: Text("Loading..."),
-        ),
+      body: Stack(
+        children: <Widget>[
+          WaveWidget(
+            config: CustomConfig(
+              gradients: [
+                [Colors.white24, Colors.white38],
+                [Colors.white38, Colors.white30],
+                [Colors.white70, Colors.white60],
+                [Colors.white, Colors.white70],
+              ],
+              durations: [35000, 19440, 10800, 6000],
+              heightPercentages: [0.78, 0.80, 0.83, 0.85],
+              blur: MaskFilter.blur(BlurStyle.solid, 10),
+              gradientBegin: Alignment.bottomLeft,
+              gradientEnd: Alignment.topRight,
+            ),
+            duration: 5000,
+            heightPercentange: 0.25,
+            wavePhase: 10,
+            waveAmplitude: 0,
+            backgroundColor: Colors.blue,
+            size: Size(double.infinity, double.infinity),
+          ),
+          Center(
+            child: Container(
+              child: Transform.rotate(
+                angle: -90,
+                child: Image.network(
+                  'https://storage.needpix.com/rsynced_images/black-2420162_1280.png',
+                  height: 200,
+                  width: 200,
+                  color: Colors.white70,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
