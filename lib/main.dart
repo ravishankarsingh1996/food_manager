@@ -52,7 +52,8 @@ class _MyHomePageState extends State<MyHomePage> {
   List userList = List();
   List<dynamic> bookingList = List();
   ProgressDialog pr;
-  String userJson = '';
+  String userJson =
+      '{"email": "", "uid": "test", "firstName": "", "lastName": "", "qrData": "", "reference": ""}';
 
   @override
   void initState() {
@@ -119,7 +120,6 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void getUserData() async {
-    showProgressDialog(true);
     QuerySnapshot querySnapshot = await Firestore.instance
         .collection(AppConstants.DB_KEY_USER)
         .getDocuments();
@@ -129,21 +129,17 @@ class _MyHomePageState extends State<MyHomePage> {
         .document(widget.uid)
         .get();
     if (result != null) {
+      showProgressDialog(false);
       setState(() {
-        showProgressDialog(false);
         _isVendor = result.data[AppConstants.KEY_IS_VENDOR];
         if (_isVendor) {
           userList = querySnapshot.documents;
-          for (int i = 0; i < userList.length; i++) {
-            Record data = Record.fromSnapshot(userList[i]);
-            if (data.uid.compareTo(widget.uid) == 0) {
-              data.qrData = data.uid + getCurrentDateFromServer();
-              userJson = data.toString();
-            }
+        } else {
+          Record data = Record.fromSnapshot(result);
+          if (data.uid.compareTo(widget.uid) == 0) {
+            data.qrData = data.uid + getCurrentDateFromServer();
+            userJson = data.toString();
           }
-//          Record record = Record.fromSnapshot(userList[0]);
-//          AppUtils.showToast(record.email, Colors.blue, Colors.white);
-//          userList = usersRef.
         }
       });
     }
@@ -152,35 +148,38 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> scanBarcodeNormal() async {
     String barcodeScanRes;
     // Platform messages may fail, so we use a try/catch PlatformException.
-
     barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
         "#42f5ef", "Cancel", true, ScanMode.QR);
     print(barcodeScanRes);
+
+    Timestamp timestamp = Timestamp.now();
+    var date = new DateTime.fromMillisecondsSinceEpoch(
+        timestamp.millisecondsSinceEpoch);
+    var formatter = new DateFormat('yyyy-MM-dd');
+    String formatted = formatter.format(date);
+    print(formatted);
+
     Map map = jsonDecode(barcodeScanRes);
-    Record record = Record.fromMap(map);
+    Record record = Record.fromJson(map);
+    if (record.qrData.compareTo(record.uid + formatted) != 0) {
+      AppUtils.showToast('Invalid QR code', Colors.red, Colors.white);
+      return;
+    }
+
     if (bookingList.contains(record.uid)) {
       AppUtils.showToast(
-          'You already have your lunch.', Colors.red, Colors.white);
+          'Dear ${record.firstName}, You have already recieved your lunch.',
+          Colors.red,
+          Colors.white);
     } else {
-      bookingList.add(barcodeScanRes);
+      bookingList.add(record.uid);
       setState(() {
-        Timestamp timestamp = Timestamp.now();
-        var date = new DateTime.fromMillisecondsSinceEpoch(
-            timestamp.millisecondsSinceEpoch);
-        var formatter = new DateFormat('yyyy-MM-dd');
-        String formatted = formatter.format(date);
-        print(formatted);
 //      AppUtils.showToast(formatted, Colors.blue, Colors.white);
         Firestore.instance
             .collection(AppConstants.DB_KEY_BOOKING_DATA)
             .document(formatted)
             .setData({
           AppConstants.KEY_BOOKING_LIST: bookingList,
-//        AppConstants.KEY_FIRST_NAME: firstNameInputController.text,
-//        AppConstants.KEY_LAST_NAME: lastNameInputController.text,
-//        AppConstants.KEY_EMAIL: emailInputController.text,
-//        AppConstants.KEY_EMPLOYEE_ID: employeeIdInputController.text,
-//        AppConstants.KEY_IS_VENDOR: false,
         }).then((result) {});
         _scanBarcode = barcodeScanRes;
       });
@@ -201,9 +200,19 @@ class _MyHomePageState extends State<MyHomePage> {
           errorStateBuilder: (cxt, err) {
             return Container(
               child: Center(
-                child: Text(
-                  "Uh oh! Something went wrong...",
-                  textAlign: TextAlign.center,
+                child: Column(
+                  children: <Widget>[
+                    Text(
+                      "Uh oh! Something went wrong...",
+                      textAlign: TextAlign.center,
+                    ),
+                    RaisedButton(
+                      onPressed: () {
+                        getUserData();
+                      },
+                      child: Text('Reload QR code'),
+                    )
+                  ],
                 ),
               ),
             );
@@ -211,7 +220,16 @@ class _MyHomePageState extends State<MyHomePage> {
           embeddedImage: NetworkImage(
               'http://3.bp.blogspot.com/-EE2J_9N7FdI/Xc-5jf-ssgI/AAAAAAAAXmI/zWxKqrHeKGkOTBZd6aAFeZ5vXCDo6E2cgCK4BGAYYCw/s400/logo_1.png'),
           embeddedImageStyle: QrEmbeddedImageStyle(
-              size: Size.square(70), color: Color.fromARGB(100, 10, 10, 10))),
+              size: Size.square(30), color: Color.fromARGB(100, 10, 10, 10))),
+
+      userJson.contains('test')
+          ? RaisedButton(
+              onPressed: () {
+                getUserData();
+              },
+              child: Text('Reload QR code'),
+            )
+          : Container(),
     ];
   }
 
@@ -238,7 +256,7 @@ class _MyHomePageState extends State<MyHomePage> {
       UserUpdateInfo userUpdateInfo = new UserUpdateInfo();
       userUpdateInfo.displayName = user.displayName;
       user.updateProfile(userUpdateInfo).then((onValue) {
-        FirebaseAuth.instance.currentUser().then((user){
+        FirebaseAuth.instance.currentUser().then((user) {
           showProgressDialog(false);
           _isEmailVerified = user.isEmailVerified;
           if (user.isEmailVerified) {
@@ -246,8 +264,8 @@ class _MyHomePageState extends State<MyHomePage> {
               _isEmailVerified = true;
             });
           } else {
-            AppUtils.showToast(
-                'You haven\'t verified your email yet!', Colors.red, Colors.white);
+            AppUtils.showToast('You haven\'t verified your email yet!',
+                Colors.red, Colors.white);
           }
         });
       });
@@ -286,7 +304,6 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void getCurrentUserData() async {
-    showProgressDialog(true);
     try {
       FirebaseUser user = await FirebaseAuth.instance.currentUser();
       setState(() {
@@ -351,7 +368,6 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void getTodayBookingList() async {
-    showProgressDialog(true);
     QuerySnapshot querySnapshot = await Firestore.instance
         .collection(AppConstants.DB_KEY_BOOKING_DATA)
         .getDocuments();
