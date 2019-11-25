@@ -63,6 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {});
     pr = new ProgressDialog(context,
         type: ProgressDialogType.Normal, isDismissible: false, showLogs: false);
     pr.style(
@@ -90,11 +91,9 @@ class _MyHomePageState extends State<MyHomePage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.start,
             mainAxisSize: MainAxisSize.max,
-            children:
-              _isEmailVerified
-                  ? _isVendor ? _getVendorList() : _getVerifiedUserUI()
-                  : _getUnVerifiedUserUI(),
-
+            children: _isEmailVerified
+                ? _isVendor ? _getVendorList() : _getVerifiedUserUI()
+                : _getUnVerifiedUserUI(),
           ),
         ),
       ),
@@ -120,16 +119,17 @@ class _MyHomePageState extends State<MyHomePage> {
         .collection(AppConstants.DB_KEY_USER)
         .document(widget.uid)
         .get();
+    showProgressDialog(false);
     if (result != null) {
-      showProgressDialog(false);
       setState(() {
         _isVendor = result.data[AppConstants.KEY_IS_VENDOR];
         if (_isVendor) {
           userList = querySnapshot.documents;
         } else {
-           userProfileData = Record.fromSnapshot(result);
+          userProfileData = Record.fromSnapshot(result);
           if (userProfileData.uid.compareTo(widget.uid) == 0) {
-            userProfileData.qrData = userProfileData.uid + getCurrentDateFromServer();
+            userProfileData.qrData =
+                userProfileData.uid + getCurrentDateFromServer();
             userJson = userProfileData.toString();
           }
         }
@@ -173,6 +173,8 @@ class _MyHomePageState extends State<MyHomePage> {
           AppConstants.KEY_BOOKING_LIST: bookingList,
         }).then((result) {});
         _scanBarcode = barcodeScanRes;
+        AppUtils.showToast('Dear ${record.firstName}, Enjoy your lunch.😋',
+            Colors.green, Colors.white);
       });
     }
   }
@@ -211,7 +213,7 @@ class _MyHomePageState extends State<MyHomePage> {
       Container(
         child: Row(
           children: <Widget>[
-          //TODO show User profile Data UI
+            //TODO show User profile Data UI
           ],
         ),
       ),
@@ -222,52 +224,54 @@ class _MyHomePageState extends State<MyHomePage> {
           children: <Widget>[
             userJson.contains('test')
                 ? RaisedButton(
-              color: Colors.blue,
-              onPressed: () {
-                getUserData();
-              },
-              child: Text(
-                'Reload QR code',
-                style: TextStyle(color: Colors.white),
-              ),
-            )
+                    color: Colors.blue,
+                    onPressed: () {
+                      getUserData();
+                    },
+                    child: Text(
+                      'Reload QR code',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
                 : Card(
-              elevation: 30,
-              margin: EdgeInsets.all(10),
-              child: QrImage(
-                  data: userJson,
-                  // this the data part where we need to add employeeID with current date.
-                  version: QrVersions.auto,
-                  size: 400.0,
-                  gapless: false,
-                  backgroundColor: Colors.blueAccent,
-                  foregroundColor: Colors.white,
-                  errorStateBuilder: (cxt, err) {
-                    return Container(
-                      child: Center(
-                        child: Column(
-                          children: <Widget>[
-                            Text(
-                              "Uh oh! Something went wrong...",
-                              textAlign: TextAlign.center,
+                    elevation: 30,
+                    margin: EdgeInsets.all(10),
+                    child: QrImage(
+                      data: userJson,
+                      // this the data part where we need to add employeeID with current date.
+                      version: QrVersions.auto,
+                      size: 200.0,
+//                      gapless: false,
+//                      backgroundColor: Colors.blueAccent,
+//                      foregroundColor: Colors.white,
+                      errorStateBuilder: (cxt, err) {
+                        return Container(
+                          child: Center(
+                            child: Column(
+                              children: <Widget>[
+                                Text(
+                                  "Uh oh! Something went wrong...",
+                                  textAlign: TextAlign.center,
+                                ),
+                                RaisedButton(
+                                  onPressed: () {
+                                    getUserData();
+                                  },
+                                  child: Text('Reload QR code'),
+                                )
+                              ],
                             ),
-                            RaisedButton(
-                              onPressed: () {
-                                getUserData();
-                              },
-                              child: Text('Reload QR code'),
-                            )
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                  embeddedImage: NetworkImage(
-                      'http://3.bp.blogspot.com/-EE2J_9N7FdI/Xc-5jf-ssgI/AAAAAAAAXmI/zWxKqrHeKGkOTBZd6aAFeZ5vXCDo6E2cgCK4BGAYYCw/s400/logo_1.png'),
-                  embeddedImageStyle: QrEmbeddedImageStyle(
-                      size: Size.square(40),
-                      color: Color.fromARGB(100, 10, 10, 10))),
-            ),
+                          ),
+                        );
+                      },
+//                      embeddedImage: NetworkImage(
+//                          'http://3.bp.blogspot.com/-EE2J_9N7FdI/Xc-5jf-ssgI/AAAAAAAAXmI/zWxKqrHeKGkOTBZd6aAFeZ5vXCDo6E2cgCK4BGAYYCw/s400/logo_1.png'),
+//                      embeddedImageStyle: QrEmbeddedImageStyle(
+//                        size: Size.square(40),
+//                        color: Color.fromARGB(100, 10, 10, 10),
+//                      ),
+                    ),
+                  ),
             SizedBox(
               height: 20,
             ),
@@ -385,60 +389,60 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     return [
-        Container(
-            margin: EdgeInsets.all(15),
-            child: Stack(
-              alignment: Alignment.center,
-              children: <Widget>[
-                Align(
-                  alignment: Alignment.center,
-                  child: Text(
-                    'Today\'s Lunch Sheet',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
-                  ),
+      Container(
+          margin: EdgeInsets.all(15),
+          child: Stack(
+            alignment: Alignment.center,
+            children: <Widget>[
+              Align(
+                alignment: Alignment.center,
+                child: Text(
+                  'Today\'s Lunch Sheet',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
                 ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: IconButton(
-                    onPressed: () {
-                      FirebaseAuth.instance.signOut();
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => LoginPage(),
-                        ),
-                      );
-                    },
-                    icon: Icon(Icons.exit_to_app),
-                  ),
-                )
-              ],
-            )),
-        Expanded(
-          child: foodBookingUsers.length > 0
-              ? getVendorListBuilder(foodBookingUsers)
-              : Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.max,
-                    children: <Widget>[
-                      Image.network(
-                        'https://cdn.pixabay.com/photo/2017/02/21/08/49/food-2085075_960_720.png',
-                        height: 100,
-                        width: 100,
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  onPressed: () {
+                    FirebaseAuth.instance.signOut();
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => LoginPage(),
                       ),
-                      SizedBox(
-                        height: 20,
-                      ),
-                      Text('Today, No one took their lunch!'),
-                    ],
-                  ),
+                    );
+                  },
+                  icon: Icon(Icons.exit_to_app),
                 ),
-        ),
-        SizedBox(
-          height: 50,
-        )
-      ];
+              )
+            ],
+          )),
+      Expanded(
+        child: foodBookingUsers.length > 0
+            ? getVendorListBuilder(foodBookingUsers)
+            : Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.max,
+                  children: <Widget>[
+                    Image.network(
+                      'https://cdn.pixabay.com/photo/2017/02/21/08/49/food-2085075_960_720.png',
+                      height: 100,
+                      width: 100,
+                    ),
+                    SizedBox(
+                      height: 20,
+                    ),
+                    Text('Today, No one took their lunch!'),
+                  ],
+                ),
+              ),
+      ),
+      SizedBox(
+        height: 50,
+      )
+    ];
   }
 
   getVendorListBuilder(List<Record> foodBookingUsers) {

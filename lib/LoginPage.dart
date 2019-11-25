@@ -67,136 +67,143 @@ class _LoginPageState extends State<LoginPage> {
         body: SafeArea(
           child: Stack(
             children: <Widget>[
-              WaveWidget(
-                config: CustomConfig(
-                  gradients: [
-                    [Colors.white24, Colors.white38],
-                    [Colors.white38, Colors.white30],
-                    [Colors.white70, Colors.white60],
-                    [Colors.white, Colors.white70],
-                  ],
-                  durations: [35000, 19440, 10800, 6000],
-                  heightPercentages: [0.13, 0.15, 0.18, 0.20],
-                  blur: MaskFilter.blur(BlurStyle.solid, 10),
-                  gradientBegin: Alignment.bottomLeft,
-                  gradientEnd: Alignment.topRight,
+              Container(
+                height: screenSize.height,
+                width: screenSize.width,
+                child: WaveWidget(
+                  config: CustomConfig(
+                    gradients: [
+                      [Colors.white24, Colors.white38],
+                      [Colors.white38, Colors.white30],
+                      [Colors.white70, Colors.white60],
+                      [Colors.white, Colors.white70],
+                    ],
+                    durations: [35000, 19440, 10800, 6000],
+                    heightPercentages: [0.13, 0.15, 0.18, 0.20],
+                    blur: MaskFilter.blur(BlurStyle.solid, 10),
+                    gradientBegin: Alignment.bottomLeft,
+                    gradientEnd: Alignment.topRight,
+                  ),
+                  duration: 5000,
+                  heightPercentange: 0.25,
+                  wavePhase: 10,
+                  waveAmplitude: 0,
+                  backgroundColor: Colors.blue,
+                  size: Size(double.infinity, double.infinity),
                 ),
-                duration: 5000,
-                heightPercentange: 0.25,
-                wavePhase: 10,
-                waveAmplitude: 0,
-                backgroundColor: Colors.blue,
-                size: Size(double.infinity, double.infinity),
               ),
-              SingleChildScrollView(
-                child: Container(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Form(
-                      key: _loginFormKey,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.max,
-                        children: <Widget>[
-                          Text(
-                            "Login".toUpperCase(),
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 20),
-                          ),
-                          Container(
+              Container(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Form(
+                    key: _loginFormKey,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.max,
+                      children: <Widget>[
+                        Text(
+                          "Login".toUpperCase(),
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 20),
+                        ),
+                        Expanded(
+                          child: Container(
                             height: screenSize.height * 0.8,
                             width: screenSize.width,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.max,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: <Widget>[
-                                TextFormField(
-                                  decoration: InputDecoration(
-                                      labelText: 'Email*',
-                                      hintText: "john.doe@gmail.com"),
-                                  controller: emailInputController,
-                                  keyboardType: TextInputType.emailAddress,
-                                  validator: emailValidator,
-                                ),
-                                TextFormField(
-                                  decoration: InputDecoration(
-                                      labelText: 'Password*',
-                                      hintText: "********"),
-                                  controller: pwdInputController,
-                                  obscureText: true,
-                                  validator: pwdValidator,
-                                ),
-                                SizedBox(
-                                  height: 30,
-                                ),
-                                RaisedButton(
-                                  elevation: 10,
-                                  shape: StadiumBorder(),
-                                  child: Text("Login"),
-                                  color: Theme.of(context).primaryColor,
-                                  textColor: Colors.white,
-                                  onPressed: () {
-                                    if (_loginFormKey.currentState.validate()) {
-                                      showProgressDialog(true);
-                                      FirebaseAuth.instance
-                                          .signInWithEmailAndPassword(
-                                              email: emailInputController.text,
-                                              password: pwdInputController.text)
-                                          .then((currentUser) {
+                            margin: EdgeInsets.only(top: 200),
+                            child: SingleChildScrollView(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.max,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: <Widget>[
+                                  TextFormField(
+                                    decoration: InputDecoration(
+                                        labelText: 'Email*',
+                                        hintText: "john.doe@gmail.com"),
+                                    controller: emailInputController,
+                                    keyboardType: TextInputType.emailAddress,
+                                    validator: emailValidator,
+                                  ),
+                                  TextFormField(
+                                    decoration: InputDecoration(
+                                        labelText: 'Password*',
+                                        hintText: "********"),
+                                    controller: pwdInputController,
+                                    obscureText: true,
+                                    validator: pwdValidator,
+                                  ),
+                                  SizedBox(
+                                    height: 30,
+                                  ),
+                                  RaisedButton(
+                                    elevation: 10,
+                                    shape: StadiumBorder(),
+                                    child: Text("Login"),
+                                    color: Theme.of(context).primaryColor,
+                                    textColor: Colors.white,
+                                    onPressed: () {
+                                      if (_loginFormKey.currentState.validate()) {
                                         showProgressDialog(true);
-                                        Firestore.instance
-                                            .collection("users")
-                                            .document(currentUser.user.uid)
-                                            .get()
-                                            .then((DocumentSnapshot result) {
-                                          showProgressDialog(false);
-                                          Navigator.pushReplacement(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => MyHomePage(
-                                                title: ('Welcome Back ' +
-                                                        result.data["fname"])
-                                                    .toUpperCase(),
-                                                uid: currentUser.user.uid,
+                                        FirebaseAuth.instance
+                                            .signInWithEmailAndPassword(
+                                                email: emailInputController.text,
+                                                password: pwdInputController.text)
+                                            .then((currentUser) {
+                                          showProgressDialog(true);
+                                          Firestore.instance
+                                              .collection("users")
+                                              .document(currentUser.user.uid)
+                                              .get()
+                                              .then((DocumentSnapshot result) {
+                                            showProgressDialog(false);
+                                            Navigator.pushReplacement(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => MyHomePage(
+                                                  title: ('Welcome Back ' +
+                                                          result.data["fname"])
+                                                      .toUpperCase(),
+                                                  uid: currentUser.user.uid,
+                                                ),
                                               ),
-                                            ),
-                                          );
+                                            );
+                                          }).catchError((err) {
+                                            showProgressDialog(false);
+                                            print(err);
+                                            AppUtils.showToast(err.message,
+                                                Colors.red, Colors.white);
+                                          });
                                         }).catchError((err) {
                                           showProgressDialog(false);
                                           print(err);
                                           AppUtils.showToast(err.message,
                                               Colors.red, Colors.white);
                                         });
-                                      }).catchError((err) {
-                                        showProgressDialog(false);
-                                        print(err);
-                                        AppUtils.showToast(err.message,
-                                            Colors.red, Colors.white);
-                                      });
-                                    }
-                                  },
-                                ),
-                                SizedBox(
-                                  height: 10,
-                                ),
-                                Text("Don't have an account yet?"),
-                                SizedBox(
-                                  height: 2,
-                                ),
-                                FlatButton(
-                                  child: Text("Register here!"),
-                                  onPressed: () {
-                                    Navigator.pushNamed(context, "/register");
-                                  },
-                                )
-                              ],
+                                      }
+                                    },
+                                  ),
+                                  SizedBox(
+                                    height: 10,
+                                  ),
+                                  Text("Don't have an account yet?"),
+                                  SizedBox(
+                                    height: 2,
+                                  ),
+                                  FlatButton(
+                                    child: Text("Register here!"),
+                                    onPressed: () {
+                                      Navigator.pushNamed(context, "/register");
+                                    },
+                                  )
+                                ],
+                              ),
                             ),
                           ),
-                        ],
-                      ),
-                    )),
-              )
+                        ),
+                      ],
+                    ),
+                  ))
             ],
           ),
         ));

@@ -29,33 +29,35 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   initState() {
-    pr = new ProgressDialog(context,type: ProgressDialogType.Normal, isDismissible:false, showLogs: false);
+    super.initState();
+    pr = new ProgressDialog(context,
+        type: ProgressDialogType.Normal, isDismissible: false, showLogs: false);
     pr.style(
-      message: 'Please wait...',);
+      message: 'Please wait...',
+    );
     firstNameInputController = new TextEditingController();
     lastNameInputController = new TextEditingController();
     emailInputController = new TextEditingController();
     employeeIdInputController = new TextEditingController();
     pwdInputController = new TextEditingController();
     confirmPwdInputController = new TextEditingController();
-    super.initState();
+
   }
 
-  showProgressDialog(bool isShow){
-    if(isShow){
+  showProgressDialog(bool isShow) {
+    if (isShow) {
       pr.show();
-    }else{
+    } else {
       pr.hide();
     }
   }
-
 
   String emailValidator(String value) {
     Pattern pattern =
         r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$';
     RegExp regex = new RegExp(pattern);
     if (!regex.hasMatch(value)) {
-      return 'Email format is invalid';
+      return 'Please enter a valid email.';
     } else {
       return null;
     }
@@ -63,7 +65,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   String pwdValidator(String value) {
     if (value.length < 8) {
-      return 'Password must be longer than 8 characters';
+      return 'Password must be longer than 8 characters.';
     } else {
       return null;
     }
@@ -81,134 +83,146 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     var screenSize = MediaQuery.of(context).size;
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+//      resizeToAvoidBottomInset: false,
         body: SafeArea(
-          child: Stack(
-            children: <Widget>[
-              WaveWidget(
-                config: CustomConfig(
-                  gradients: [
-                    [Colors.white24, Colors.white38],
-                    [Colors.white38, Colors.white30],
-                    [Colors.white70, Colors.white60],
-                    [Colors.white, Colors.white70],
-                  ],
-                  durations: [35000, 19440, 10800, 6000],
-                  heightPercentages: [0.10, 0.12, 0.15, 0.17],
-                  blur: MaskFilter.blur(BlurStyle.solid, 10),
-                  gradientBegin: Alignment.bottomLeft,
-                  gradientEnd: Alignment.topRight,
-                ),
-                duration: 5000,
-                heightPercentange: 0.25,
-                wavePhase: 10,
-                waveAmplitude: 0,
-                backgroundColor: Colors.blue,
-                size: Size(double.infinity, double.infinity),
+      child: Stack(
+        children: <Widget>[
+          Container(
+            height: screenSize.height,
+            width: screenSize.width,
+            child: WaveWidget(
+              config: CustomConfig(
+                gradients: [
+                  [Colors.white24, Colors.white38],
+                  [Colors.white38, Colors.white30],
+                  [Colors.white70, Colors.white60],
+                  [Colors.white, Colors.white70],
+                ],
+                durations: [35000, 19440, 10800, 6000],
+                heightPercentages: [0.10, 0.12, 0.15, 0.17],
+                blur: MaskFilter.blur(BlurStyle.solid, 10),
+                gradientBegin: Alignment.bottomLeft,
+                gradientEnd: Alignment.topRight,
               ),
-              Container(
-                height: screenSize.height,
-                  width: screenSize.width,
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        "Register".toUpperCase(),
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 20),
-                      ),
-                      SingleChildScrollView(
-                        child: Container(
-                          child: Form(
-                            key: _registerFormKey,
-                            child: Container(
-                              margin: EdgeInsets.only(top: 150),
-                              child: Column(
-                                children: <Widget>[
-                                  TextFormField(
-                                    decoration: InputDecoration(
-                                        labelText: 'First Name*', hintText: "John"),
-                                    controller: firstNameInputController,
-                                    validator: (value) {
-                                      if (value.length < 3) {
-                                        return "Please enter a valid first name.";
-                                      }
-                                    },
-                                  ),
-                                  TextFormField(
-                                      decoration: InputDecoration(
-                                          labelText: 'Last Name*', hintText: "Doe"),
-                                      controller: lastNameInputController,
-                                      validator: (value) {
-                                        if (value.length < 3) {
-                                          return "Please enter a valid last name.";
-                                        }
-                                      }),
-                                  TextFormField(
-                                    decoration: InputDecoration(
-                                        labelText: 'Email*', hintText: "john.doe@gmail.com"),
-                                    controller: emailInputController,
-                                    keyboardType: TextInputType.emailAddress,
-                                    validator: emailValidator,
-                                  ),
-                                  TextFormField(
-                                    decoration: InputDecoration(
-                                        labelText: 'EmployeeId*', hintText: "MOB001"),
-                                    controller: employeeIdInputController,
-                                    keyboardType: TextInputType.text,
-                                    validator: employeeIdValidator,
-                                  ),
-                                  TextFormField(
-                                    decoration: InputDecoration(
-                                        labelText: 'Password*', hintText: "********"),
-                                    controller: pwdInputController,
-                                    obscureText: true,
-                                    validator: pwdValidator,
-                                  ),
-                                  TextFormField(
-                                    decoration: InputDecoration(
-                                        labelText: 'Confirm Password*', hintText: "********"),
-                                    controller: confirmPwdInputController,
-                                    obscureText: true,
-                                    validator: pwdValidator,
-                                  ),
-                                  SizedBox(
-                                    height: 10,
-                                  ),
-                                  RaisedButton(
-                                    shape: StadiumBorder(),
-                                    child: Text("Register"),
-                                    color: Theme.of(context).primaryColor,
-                                    textColor: Colors.white,
-                                    onPressed: onRegisterClicked,
-                                  ),
-                                  SizedBox(
-                                    height: 10,
-                                  ),
-                                  Text("Already have an account?"),
-                                  SizedBox(
-                                    height: 2,
-                                  ),
-                                  FlatButton(
-                                    child: Text("Login here!"),
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                    },
-                                  )
-                                ],
+              duration: 5000,
+              heightPercentange: 0.25,
+              wavePhase: 10,
+              waveAmplitude: 0,
+              backgroundColor: Colors.blue,
+              size: Size(double.infinity, double.infinity),
+            ),
+          ),
+          Container(
+              height: screenSize.height,
+              width: screenSize.width,
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisSize: MainAxisSize.max,
+                children: <Widget>[
+                  Text(
+                    "Register".toUpperCase(),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 20),
+                  ),
+                  Expanded(
+                    child: Container(
+                      width: screenSize.width,
+                      margin: EdgeInsets.only(top: 150),
+                      child: SingleChildScrollView(
+                        child: Form(
+                          key: _registerFormKey,
+                          child: Column(
+                            children: <Widget>[
+                              TextFormField(
+                                decoration: InputDecoration(
+                                    labelText: 'First Name*', hintText: "John"),
+                                controller: firstNameInputController,
+                                validator: (value) {
+                                  if(value.length == 0 ){
+                                    return "Please enter your first name.";
+                                  }else if (value.length < 3) {
+                                    return "Please enter a valid first name.";
+                                  }
+                                },
                               ),
-                            ),
+                              TextFormField(
+                                  decoration: InputDecoration(
+                                      labelText: 'Last Name*', hintText: "Doe"),
+                                  controller: lastNameInputController,
+                                  validator: (value) {
+                                    if(value.length == 0 ){
+                                      return "Please enter your last name.";
+                                    }else if (value.length < 3) {
+                                      return "Please enter a valid last name.";
+                                    }
+                                  }),
+                              TextFormField(
+                                decoration: InputDecoration(
+                                    labelText: 'Email*',
+                                    hintText: "john.doe@gmail.com"),
+                                controller: emailInputController,
+                                keyboardType: TextInputType.emailAddress,
+                                validator: emailValidator,
+                              ),
+                              TextFormField(
+                                decoration: InputDecoration(
+                                    labelText: 'EmployeeId*', hintText: "MOB001"),
+                                controller: employeeIdInputController,
+                                keyboardType: TextInputType.text,
+                                validator: employeeIdValidator,
+                              ),
+                              TextFormField(
+                                decoration: InputDecoration(
+                                    labelText: 'Password*', hintText: "********"),
+                                controller: pwdInputController,
+                                obscureText: true,
+                                validator: pwdValidator,
+                              ),
+                              TextFormField(
+                                decoration: InputDecoration(
+                                    labelText: 'Confirm Password*',
+                                    hintText: "********"),
+                                controller: confirmPwdInputController,
+                                obscureText: true,
+                                validator: pwdValidator,
+                              ),
+                              SizedBox(
+                                height: 10,
+                              ),
+                              RaisedButton(
+                                shape: StadiumBorder(),
+                                child: Text("Register"),
+                                color: Theme.of(context).primaryColor,
+                                textColor: Colors.white,
+                                onPressed: onRegisterClicked,
+                              ),
+                              SizedBox(
+                                height: 10,
+                              ),
+                              Text("Already have an account?"),
+                              SizedBox(
+                                height: 2,
+                              ),
+                              FlatButton(
+                                child: Text("Login here!"),
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                              )
+                            ],
                           ),
                         ),
                       ),
-                    ],
-                  ))
-            ],
-          ),
-        ));
+                    ),
+                  ),
+                ],
+              ))
+        ],
+      ),
+    ));
   }
 
   void onRegisterClicked() async {
@@ -241,7 +255,7 @@ class _RegisterPageState extends State<RegisterPage> {
               AppConstants.KEY_FIRST_NAME: firstNameInputController.text,
               AppConstants.KEY_LAST_NAME: lastNameInputController.text,
               AppConstants.KEY_EMAIL: emailInputController.text,
-              AppConstants.KEY_EMPLOYEE_ID: employeeIdInputController.text,
+              AppConstants.KEY_EMPLOYEE_ID: employeeIdInputController.text.toUpperCase(),
               AppConstants.KEY_IS_VENDOR: false,
             }).then((result) {
               showProgressDialog(false);
@@ -249,8 +263,9 @@ class _RegisterPageState extends State<RegisterPage> {
                   context,
                   MaterialPageRoute(
                       builder: (context) => MyHomePage(
-                            title:
-                            ('Welcome back ' + firstNameInputController.text).toUpperCase(),
+                            title: ('Welcome back ' +
+                                    firstNameInputController.text)
+                                .toUpperCase(),
                             uid: currentUser.user.uid,
                           )),
                   (_) => false);
