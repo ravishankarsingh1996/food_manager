@@ -25,6 +25,13 @@ Empty Screen Vendor
 <img src="extras/two.jpg" width=200 />
 
 
+Firebase Configuration
+====
+You need to configure your Android & iOS app on Firebase and use Cloud Firestore DB.
+[Firebase Console](https://console.firebase.google.com) 
 
+
+Contributers
+====
 ^Contribution by [Ravi Shankar Singh](https://about.me/itsravishankarsingh) & [Rohit Pathak](https://github.com/rpathakmobcoder)
 
